@@ -287,53 +287,25 @@ func GenerateRSAKeyByFile(bits int) (*os.File, *os.File, error) {
 	return privateFile, publicFile, nil
 }
 
-// func main() {
-// 	// 调用 GenerateRSAKey 函数，传入 2048 作为密钥长度，得到私钥文件和公钥文件
-// 	privateFile, publicFile, err := GenerateRSAKey(2048)
-// 	if err != nil {
-// 		// 如果出错，打印错误信息
-// 		fmt.Println(err)
-// 	} else {
-// 		// 如果成功，打印提示信息
-// 		fmt.Println("生成 RSA 公钥和私钥成功")
-// 	}
-// 	// 在这里可以使用私钥文件和公钥文件进行其他操作，例如传输或者关闭
-// 	// 例如，打印文件名
-// 	fmt.Println("私钥文件名:", privateFile.Name())
-// 	fmt.Println("公钥文件名:", publicFile.Name())
-// 	// 关闭文件
-// 	privateFile.Close()
-// 	publicFile.Close()
-// }
-// func main() {
-// 	// 调用 ReadPublicKey 函数，传入公钥文件名，得到公钥
-// 	publicKey, err := ReadPublicKey("public.pem")
-// 	if err != nil {
-// 		// 如果出错，打印错误信息
-// 		fmt.Println(err)
-// 	} else {
-// 		// 如果成功，打印公钥
-// 		fmt.Println("公钥:", publicKey)
-// 	}
-// 	// 调用 ReadPrivateKey 函数，传入私钥文件名，得到私钥
-// 	privateKey, err := ReadPrivateKey("private.pem")
-// 	if err != nil {
-// 		// 如果出错，打印错误信息
-// 		fmt.Println(err)
-// 	} else {
-// 		// 如果成功，打印私钥
-// 		fmt.Println("私钥:", privateKey)
-// 	}
-// }
+// 解析string数据 私钥数据获取
+func ReadPrivateString(privateKeys string) (*rsa.PrivateKey, error) {
+	// 打开私钥文件
 
-// func main() {
-// 	// 调用 GenerateRSAKey 函数，传入 2048 作为密钥长度
-// 	err := GenerateRSAKey(2048)
-// 	if err != nil {
-// 		// 如果出错，打印错误信息
-// 		fmt.Println(err)
-// 	} else {
-// 		// 如果成功，打印提示信息
-// 		fmt.Println("生成 RSA 公钥和私钥成功")
-// 	}
-// }
+	// 解码私钥文件的内容，得到 PEM 数据
+	privateBlock, _ := pem.Decode([]byte(privateKeys))
+	if privateBlock == nil {
+		return nil, fmt.Errorf("invalid private key data")
+	}
+	// 解析 PEM 数据，得到 PKCS#8 编码
+	privateInterface, err := x509.ParsePKCS8PrivateKey(privateBlock.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	// 类型断言，得到私钥
+	privateKey, ok := privateInterface.(*rsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("not a RSA private key")
+	}
+	// 返回私钥
+	return privateKey, nil
+}

@@ -18,6 +18,7 @@ func TestRing(t *testing.T) {
 		key = append(key, generateKey)
 		pubkeys = append(pubkeys, &generateKey.PublicKey)
 	}
+
 	// SignWrapper传入组成员的个数，签名者在组中的位置（0开头），消息，组成员的公钥，签名者的私钥
 	signresult1 := SignWrapper(size, 0, msg1, pubkeys, key[0])
 	// 将数据的值存放在缓存中

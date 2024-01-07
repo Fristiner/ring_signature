@@ -95,6 +95,37 @@ func (ring *ring) verify(m string, X []*big.Int) int {
 	return r.Cmp(X[0])
 }
 
+// 导入 errors 包，用于创建 error 对象
+
+// 修改函数的签名，增加一个 error 类型的返回值
+func (ring *ring) verify2(m string, X []*big.Int) (int, error) {
+	var y []*big.Int
+	r := big.NewInt(0)
+	temp := big.NewInt(0)
+	ring.hash(m)
+	// 生成所有yi
+	for i := 0; i < len(X)-1; i++ {
+		temp = big.NewInt(int64(ring.PubKeys[i].E))
+		y = append(y, ring.g(X[i+1], temp, ring.PubKeys[i].N))
+	}
+	// 一轮过后是否相同，Ckv（y1...yn）=eEk(yn xor eEk(yn-1 xor ... eEk(y1 xor v)...)) = v
+	// 检查 X 是否为空
+	if len(X) == 0 {
+		// 如果为空，返回一个错误
+		return -1, errors.New("X is empty")
+	}
+	r.Set(X[0])
+	for i := 0; i < ring.N; i++ {
+		r = ring.eEk(temp.Xor(r, y[i]))
+	}
+	// 如果 r 和 X[0] 相等，返回 0 和 nil
+	if r.Cmp(X[0]) == 0 {
+		return 0, nil
+	}
+	// 如果 r 和 X[0] 不相等，返回 -1 和一个 error 对象
+	return -1, errors.New("verification failed")
+}
+
 // 求出明文的hash放入P中作为k，更新成sha256
 func (ring *ring) hash(m string) {
 	a := sha256.Sum256([]byte(m))
@@ -148,6 +179,21 @@ func VerifyWrapper(msg string, key []*rsa.PublicKey, X []*big.Int) bool {
 		return true
 	} else {
 		return false
+	}
+}
+func VerifyWrapper2(msg string, key []*rsa.PublicKey, X []*big.Int) (bool, error) {
+	r := new(ring)
+	r.init(key, nil, 1024)
+	// verify := r.verify(msg, X)
+	// re := verify
+	re, err := r.verify2(msg, X)
+	if err != nil {
+		return false, err
+	}
+	if re == 0 {
+		return true, nil
+	} else {
+		return false, nil
 	}
 }
 
